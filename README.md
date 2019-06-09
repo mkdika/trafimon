@@ -2,7 +2,7 @@
 
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-green.svg)](/LICENSE)
 
-Routes' traffic congestions monitor base on Google Map Platform API.
+Routes and traffic congestions monitor base on Google Map Platform API.
 
 ### Stack
 
@@ -17,7 +17,7 @@ Routes' traffic congestions monitor base on Google Map Platform API.
 
 ### Reference
 
-- [Kotlin Ktor Mongo Sample](https://github.com/jkratz55/kotlin-ktor-mongo-sample)
+_Coming soon.._
 
 ## License
 Licensed under the Apache License, Version 2.0. See [LICENSE](/LICENSE) file.

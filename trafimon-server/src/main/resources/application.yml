@@ -1,1 +1,4 @@
-
+google:
+  map:
+    baseurl: "https://maps.googleapis.com/"
+    apikey: ${GOOGLE_MAP_APIKEY}

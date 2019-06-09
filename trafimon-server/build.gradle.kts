@@ -16,8 +16,10 @@ repositories {
 }
 
 dependencies {
-	implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
-	implementation("org.springframework.boot:spring-boot-starter-webflux")
+	implementation("org.springframework.boot:spring-boot-starter-web") {
+		exclude(module = "spring-boot-starter-tomcat")
+	}
+	implementation("org.springframework.boot:spring-boot-starter-jetty")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
@@ -27,9 +29,9 @@ dependencies {
 	implementation("com.squareup.retrofit2:converter-jackson:2.5.0")
 	implementation("com.squareup.retrofit2:converter-scalars:2.5.0")
 	implementation("com.squareup.retrofit2:retrofit:2.5.0")
+	implementation("com.squareup.okhttp3:logging-interceptor:3.12.1")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("io.projectreactor:reactor-test")
 }
 
 tasks.withType<KotlinCompile> {
