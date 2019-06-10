@@ -1,12 +1,15 @@
 package com.github.mkdika.trafimonserver.service.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.github.mkdika.trafimonserver.helper.HttpRequestHelper
+import com.github.mkdika.trafimonserver.helper.HttpHelper
 import com.github.mkdika.trafimonserver.helper.TravelMode
-import com.github.mkdika.trafimonserver.model.TrafficCondition
+import com.github.mkdika.trafimonserver.model.Trafi
 import com.github.mkdika.trafimonserver.model.gmphttp.DistanceMatrixResponse
 import com.github.mkdika.trafimonserver.model.gmphttp.PlaceSearchResponse
-import com.github.mkdika.trafimonserver.service.TraficonService
+import com.github.mkdika.trafimonserver.model.trafihttp.TrafiConditionResponse
+import com.github.mkdika.trafimonserver.model.trafihttp.TrafiPlaceSearchResponse
+import com.github.mkdika.trafimonserver.repository.TrafiRepository
+import com.github.mkdika.trafimonserver.service.TrafiService
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -24,11 +27,11 @@ import retrofit2.converter.jackson.JacksonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 import java.net.SocketTimeoutException
+import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.streams.toList
 
 @Service
-class TraficonServiceImpl : TraficonService, InitializingBean {
+class TrafiServiceImpl : TrafiService, InitializingBean {
 
     @Value("\${google.map.apikey}")
     lateinit var googleMapApiKey: String
@@ -38,6 +41,12 @@ class TraficonServiceImpl : TraficonService, InitializingBean {
 
     @Autowired
     lateinit var customObjectMapper: ObjectMapper
+
+    @Autowired
+    lateinit var trafiRepository: TrafiRepository
+
+    @Autowired
+    lateinit var httpHelper: HttpHelper
 
     lateinit var gmpHttp: GmpHttp
 
@@ -62,22 +71,57 @@ class TraficonServiceImpl : TraficonService, InitializingBean {
             .create(GmpHttp::class.java)
     }
 
-    override fun searchPlace(keyWord: String): List<PlaceSearchResponse> {
+    override fun searchPlace(keyWord: String): List<TrafiPlaceSearchResponse> {
 
         if (keyWord.isNullOrEmpty()) return emptyList()
 
-        val encodedKeyWord = HttpRequestHelper.encodeString(keyWord)
+        val encodedKeyWord = httpHelper.encodeString(keyWord)
 
-        val response = gmpHttp.getSearchPlace(query = keyWord,
-            key = googleMapApiKey).execute()
+        val response = gmpHttp.getSearchPlace(
+            query = keyWord,
+            key = googleMapApiKey
+        ).execute()
 
-        return response.body().orEmpty()
+        val searchPlaceResult = response.body()?.let {
+
+            it.results.map {
+                TrafiPlaceSearchResponse(
+                    name = it.name,
+                    address = it.formattedAddress,
+                    placeId = it.placeId,
+                    lat = it.geometry.location.lat,
+                    lng = it.geometry.location.lng
+                )
+            }.toList()
+
+        }
+        return searchPlaceResult.orEmpty()
     }
 
-    override fun getTrafficCondition(origins: String,
-                                     destinations: String,
-                                     mode: TravelMode): TrafficCondition {
-        return TrafficCondition()
+    override fun getTrafficCondition(trafiId: String,
+                                     mode: TravelMode): TrafiConditionResponse {
+        return TrafiConditionResponse()
+    }
+
+    override fun getTrafiByUser(userId: String): List<Trafi> {
+
+        return trafiRepository.findByUserId(userId).orEmpty()
+    }
+
+    override fun getTrafiById(id: String): Optional<Trafi> {
+        return trafiRepository.findById(id)
+    }
+
+    override fun saveOrUpdateTrafi(userId: String, trafi: Trafi): Trafi {
+
+        val saveTrafi = trafi.copy(userId = userId)
+
+        return trafiRepository.save(saveTrafi)
+    }
+
+    override fun removeTrafi(trafi: Trafi) {
+
+        trafiRepository.delete(trafi)
     }
 
     private fun createLoggingInterceptor(): HttpLoggingInterceptor {
@@ -111,7 +155,7 @@ class TraficonServiceImpl : TraficonService, InitializingBean {
 
         @GET("maps/api/place/textsearch/json")
         fun getSearchPlace(@Query("query") query: String,
-                           @Query("key") key: String): Call<List<PlaceSearchResponse>>
+                           @Query("key") key: String): Call<PlaceSearchResponse>
 
         @GET("maps/api/distancematrix/json")
         fun getDistanceMatrix(@Query("origins") origins: String,

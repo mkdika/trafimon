@@ -1,4 +1,36 @@
+info:
+  app:
+    description: Traffic congestions monitor base on Google Map Platform API
+
+
+# GOOGLE MAP PLATFORM PROPERTIES
+# ------------------------------
 google:
   map:
     baseurl: "https://maps.googleapis.com/"
+    actionurl: "https://www.google.com/"
     apikey: ${GOOGLE_MAP_APIKEY}
+
+
+# WEB API PROPERTIES
+# ------------------
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css
+
+
+# SPRING CUSTOM PROPERTIES
+# ------------------------
+spring:
+  data:
+    mongodb:
+      host:
+      port:
+      username:
+      password:
+      database: trafimon
+  output:
+    ansi:
+      enabled: always
