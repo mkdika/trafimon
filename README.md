@@ -9,7 +9,7 @@ Routes and traffic congestions monitor base on Google Map Platform API.
 - __Backend:__
     - Kotlin 1.2.31
     - SpringBoot 2.1.5
-    - MongoDB 4.0.10
+    - MongoDB 4.0.3
 
 - __Frontend UI:__
     - Elm 0.19.0
