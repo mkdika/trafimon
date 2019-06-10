@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import javax.validation.Valid
 
 @RestController
 @RequestMapping("/api")
@@ -28,19 +27,19 @@ class TraficonController {
         return ResponseEntity.ok().body(result)
     }
 
+    @PostMapping("/trafi",
+        produces = [MediaType.APPLICATION_JSON_VALUE],
+        consumes = [MediaType.APPLICATION_JSON_VALUE])
+    fun saveOrUpdateTrafi(@RequestBody trafi: Trafi): ResponseEntity<Trafi> {
+        return ResponseEntity.ok().body(trafiService.saveOrUpdateTrafi("system", trafi))
+    }
+
     @GetMapping("/trafi", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getTrafiByUserId(): ResponseEntity<List<Trafi>> {
 
         val result = trafiService.getTrafiByUser("system")
 
         return ResponseEntity.ok().body(result)
-    }
-
-    @PostMapping("/trafi",
-        produces = [MediaType.APPLICATION_JSON_VALUE],
-        consumes = [MediaType.APPLICATION_JSON_VALUE])
-    fun saveOrUpdateTrafi(@Valid @RequestBody trafi: Trafi): ResponseEntity<Trafi> {
-        return ResponseEntity.ok().body(trafiService.saveOrUpdateTrafi("system", trafi))
     }
 
     @DeleteMapping("/trafi/{id}")

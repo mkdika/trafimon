@@ -3,18 +3,19 @@ package com.github.mkdika.trafimonserver.model
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import java.util.*
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.NotNull
 
-@Document
+@Document(collection = "trafi")
 data class Trafi (
 
     @Id
     @JsonProperty("id")
-    val id: String,
+    val id: UUID = UUID.randomUUID(),
 
     @JsonProperty("userId")
-    val userId: String,
+    val userId: String = "system",
 
     @JsonProperty("origin")
     @field:NotNull(message = "Origin cant null")

@@ -109,7 +109,8 @@ class TrafiServiceImpl : TrafiService, InitializingBean {
     }
 
     override fun getTrafiById(id: String): Optional<Trafi> {
-        return trafiRepository.findById(id)
+        logger.info("id: $id")
+        return trafiRepository.findById(UUID.fromString(id))
     }
 
     override fun saveOrUpdateTrafi(userId: String, trafi: Trafi): Trafi {
