@@ -2,6 +2,7 @@ package com.github.mkdika.trafimonserver.service.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.mkdika.trafimonserver.helper.HttpHelper
+import com.github.mkdika.trafimonserver.helper.TrafiException.RecordNotFoundException
 import com.github.mkdika.trafimonserver.helper.TravelMode
 import com.github.mkdika.trafimonserver.model.Trafi
 import com.github.mkdika.trafimonserver.model.gmphttp.DistanceMatrixResponse
@@ -9,6 +10,7 @@ import com.github.mkdika.trafimonserver.model.gmphttp.PlaceSearchResponse
 import com.github.mkdika.trafimonserver.model.trafihttp.TrafiConditionResponse
 import com.github.mkdika.trafimonserver.model.trafihttp.TrafiPlaceSearchResponse
 import com.github.mkdika.trafimonserver.repository.TrafiRepository
+import com.github.mkdika.trafimonserver.service.TrafficStatusChecker
 import com.github.mkdika.trafimonserver.service.TrafiService
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -48,6 +50,9 @@ class TrafiServiceImpl : TrafiService, InitializingBean {
     @Autowired
     lateinit var httpHelper: HttpHelper
 
+    @Autowired
+    lateinit var trafficStatusChecker: TrafficStatusChecker
+
     lateinit var gmpHttp: GmpHttp
 
     private val requestTimeout = 3000L
@@ -75,8 +80,6 @@ class TrafiServiceImpl : TrafiService, InitializingBean {
 
         if (keyWord.isNullOrEmpty()) return emptyList()
 
-        val encodedKeyWord = httpHelper.encodeString(keyWord)
-
         val response = gmpHttp.getSearchPlace(
             query = keyWord,
             key = googleMapApiKey
@@ -84,33 +87,82 @@ class TrafiServiceImpl : TrafiService, InitializingBean {
 
         val searchPlaceResult = response.body()?.let {
 
-            it.results.map {
+            it.results.map { gmpPlace ->
                 TrafiPlaceSearchResponse(
-                    name = it.name,
-                    address = it.formattedAddress,
-                    placeId = it.placeId,
-                    lat = it.geometry.location.lat,
-                    lng = it.geometry.location.lng
+                    name = gmpPlace.name,
+                    address = gmpPlace.formattedAddress,
+                    placeId = gmpPlace.placeId,
+                    lat = gmpPlace.geometry.location.lat,
+                    lng = gmpPlace.geometry.location.lng
                 )
             }.toList()
-
         }
         return searchPlaceResult.orEmpty()
     }
 
+    @Throws(RecordNotFoundException::class)
     override fun getTrafficCondition(trafiId: String,
                                      mode: TravelMode): TrafiConditionResponse {
-        return TrafiConditionResponse()
+
+        val trafi = trafiRepository.findById(UUID.fromString(trafiId))
+            .orElseThrow {
+                RecordNotFoundException()
+            }
+
+        val response = gmpHttp.getDistanceMatrix(
+            origins = "${trafi.origin.name},${trafi.origin.address}",
+            destinations = "${trafi.destination.name},${trafi.destination.address}",
+            depatureTime = "now",
+            travelmode = mode.name.toLowerCase(),
+            key = googleMapApiKey
+        ).execute()
+
+        val result = response.body()?.let {
+
+            val distanceMatrixElement = it.rows.first().elements.first()
+
+            val trafiConditionResponse = TrafiConditionResponse(
+                trafiId = trafi.id.toString(),
+                distance = distanceMatrixElement.distance.text,
+                durationNormal = distanceMatrixElement.duration.text,
+                durationInTraffic = distanceMatrixElement.durationInTraffic
+                    .text
+                    .ifEmpty { distanceMatrixElement.duration.text },
+                traficStatus = trafficStatusChecker.checkTrafficStatus(distanceMatrixElement),
+                gmpAction = httpHelper.generateGmpRouteAction(
+                    trafi = trafi,
+                    travelMode = mode
+                )
+            )
+            trafiConditionResponse
+        }
+        return result
+            ?: throw RecordNotFoundException("Submitted distanceMatrix not found!")
     }
 
+    @Throws(RecordNotFoundException::class)
     override fun getTrafiByUser(userId: String): List<Trafi> {
 
-        return trafiRepository.findByUserId(userId).orEmpty()
+        return trafiRepository.findByUserId(userId)
     }
 
-    override fun getTrafiById(id: String): Optional<Trafi> {
-        logger.info("id: $id")
+    @Throws(RecordNotFoundException::class)
+    override fun getTrafiById(id: String): Trafi {
         return trafiRepository.findById(UUID.fromString(id))
+            .orElseThrow {
+                RecordNotFoundException()
+            }
+    }
+
+    @Throws(RecordNotFoundException::class)
+    override fun removeTrafi(id: String) {
+
+        val trafi = trafiRepository.findById(UUID.fromString(id))
+            .orElseThrow {
+                RecordNotFoundException()
+            }
+
+        trafiRepository.delete(trafi)
     }
 
     override fun saveOrUpdateTrafi(userId: String, trafi: Trafi): Trafi {
@@ -118,11 +170,6 @@ class TrafiServiceImpl : TrafiService, InitializingBean {
         val saveTrafi = trafi.copy(userId = userId)
 
         return trafiRepository.save(saveTrafi)
-    }
-
-    override fun removeTrafi(trafi: Trafi) {
-
-        trafiRepository.delete(trafi)
     }
 
     private fun createLoggingInterceptor(): HttpLoggingInterceptor {
@@ -161,6 +208,7 @@ class TrafiServiceImpl : TrafiService, InitializingBean {
         @GET("maps/api/distancematrix/json")
         fun getDistanceMatrix(@Query("origins") origins: String,
                               @Query("destinations") destinations: String,
+                              @Query("departure_time") depatureTime: String,
                               @Query("travelmode") travelmode: String,
                               @Query("key") key: String): Call<DistanceMatrixResponse>
     }

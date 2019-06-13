@@ -12,7 +12,6 @@ data class DistanceMatrixResponse (
 
     @JsonProperty("rows")
     val rows: List<DmRow> = emptyList()
-
 )
 
 data class DmRow (
