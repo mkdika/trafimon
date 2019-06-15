@@ -9,19 +9,23 @@ import org.springframework.stereotype.Service
 @Service
 class SimpleTrafficStatusCheckerImpl : TrafficStatusChecker {
 
+    private val normalTrafficDiff = 300
+    private val mediumTrafficDiff = 301..720
+    private val highTrafficDiff = 721..1200
+
     override fun checkTrafficStatus(distanceMatrixElement: DmElement): TrafficStatus {
 
         val diffTime = distanceMatrixElement.durationInTraffic.value - distanceMatrixElement.duration.value
         return when {
-            diffTime <= 5 -> TrafficStatus(
+            diffTime <= normalTrafficDiff -> TrafficStatus(
                 status = TrafficCongestionStatus.NORMAL,
                 color = TrafficCongestionStatus.NORMAL.color
             )
-            diffTime in 6..12 -> TrafficStatus(
+            diffTime in mediumTrafficDiff -> TrafficStatus(
                 status = TrafficCongestionStatus.MEDIUM,
                 color = TrafficCongestionStatus.MEDIUM.color
             )
-            diffTime in 13..20 -> TrafficStatus(
+            diffTime in highTrafficDiff -> TrafficStatus(
                 status = TrafficCongestionStatus.HIGH,
                 color = TrafficCongestionStatus.HIGH.color
             )

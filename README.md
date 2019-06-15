@@ -18,11 +18,16 @@ Routes and traffic congestions monitor base on Google Map Platform API.
 ### Pre Requirement
 
 - Register environment variable:
-  -`GOOGLE_MAP_APIKEY`, google map platform authorized api key.
-  -`MONGODB_USERNAME`, mongodb username.
+  - `GOOGLE_MAP_APIKEY`, google map platform authorized api key.
+  - `MONGODB_USERNAME`, mongodb username.
   - `MONGODB_PASSWORD`, mongodb password.
+  - `GOOGLE_AUTH_CLIENT_ID`, registerd google oauth client Id.
+  - `GOOGLE_AUTH_CLIENT_SECRET`, registered google oauth client secret.
 
 ### Reference
+
+- [Spring security 5 oauth2 login with Google & Facebook](https://www.baeldung.com/spring-security-5-oauth2-login)
+
 
 _Coming soon.._
 

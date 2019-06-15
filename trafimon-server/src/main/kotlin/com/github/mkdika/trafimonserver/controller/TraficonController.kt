@@ -7,7 +7,11 @@ import com.github.mkdika.trafimonserver.service.TrafiService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
+
 
 @RestController
 @RequestMapping("/api")
@@ -15,6 +19,9 @@ class TraficonController {
 
     @Autowired
     lateinit var trafiService: TrafiService
+
+    @Autowired
+    lateinit var authorizedClientService: OAuth2AuthorizedClientService
 
     @GetMapping("/place/search", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun searchPlaceByKeyWord(
@@ -34,7 +41,7 @@ class TraficonController {
     }
 
     @GetMapping("/trafi", produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getTrafiByUserId(): ResponseEntity<List<Trafi>> {
+    fun getTrafiByUserId(auth: OAuth2AuthenticationToken, model: Model): ResponseEntity<List<Trafi>> {
 
         val result = trafiService.getTrafiByUser("system")
         return ResponseEntity.ok().body(result)

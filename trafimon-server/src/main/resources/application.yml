@@ -34,3 +34,10 @@ spring:
   output:
     ansi:
       enabled: always
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_AUTH_CLIENT_ID}
+            client-secret: ${GOOGLE_AUTH_CLIENT_SECRET}
